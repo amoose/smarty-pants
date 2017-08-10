@@ -1,6 +1,7 @@
 # Description:
-#   Love is the script which captures lines like "I love donuts"
-#   and places the content in the channel of your choosing, eg. #love
+#   For the giving of praise and thanks to colleagues.
+#   Looks for messages like "love @username for [reason]", acknowledges them,
+#   and copies them to #love.
 #
 # Dependencies:
 #   None
@@ -17,6 +18,6 @@ module.exports = (robot) ->
     lover = msg.message.user.name
     lovees = msg.match[2].trim()
     action = msg.match[4]
-    room = "#love"
+    room = "love"
     robot.messageRoom room, lover + " loves " + lovees + ": " + action
     msg.send "Yay, more love for #love! Thanks, #{lover}!"
