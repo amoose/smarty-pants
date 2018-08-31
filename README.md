@@ -1,157 +1,119 @@
-# Hubot
+# Charlie - 18F's Hubot
 
-This is a version of GitHub's Campfire bot, hubot. He's pretty cool.
+This is a version of GitHub's chat bot, [Hubot](https://hubot.github.com/). Hubot's pretty cool.
 
-This version is designed to be deployed on [Heroku][heroku]. This README was generated for you by hubot to help get you started. Definitely update and improve to talk about your own instance, how to use and deploy, what functionality he has, etc!
+## What all it can do
 
-[heroku]: http://www.heroku.com
+`@charlie fun fact` or `@charlie fun fact me`  
+Get a fun fact!
 
-### Testing Hubot Locally
+`@charlie define <term>` or `@charlie glossary <term>`  
+Charlie will attempt to look the term up in the
+[18F Procurement Glossary](https://github.com/18f/procurement-glossary)
+and report what it finds
 
-You can test your hubot by running the following.
+`@charlie hug me` or `@charlie hug bomb <number>`  
+Charlie will send you a picture of a hug-offering colleague, or several!
 
-    % bin/hubot
+`love @someone for the thing` (or :heart: or `<3` them)  
+Charlie will exclaim about even more love, and will post in the #love channel
 
-You'll see some start up output about where your scripts come from and a
-prompt.
+`@charlie opm status`  
+Charlie will check with OPM about whether or not DC offices are open today
 
-    [Sun, 04 Dec 2011 18:41:11 GMT] INFO Loading adapter shell
-    [Sun, 04 Dec 2011 18:41:11 GMT] INFO Loading scripts from /home/tomb/Development/hubot/scripts
-    [Sun, 04 Dec 2011 18:41:11 GMT] INFO Loading scripts from /home/tomb/Development/hubot/src/scripts
-    Hubot>
+`@charlie is <app> approved?`
+Charlie will check if the app is approved according to the [GSA IT Standards](https://ea.gsa.gov/#!/itstandards) (also [available on Github](https://github.com/GSA/data/blob/gh-pages/enterprise-architecture/it-standards.csv))
 
-Then you can interact with hubot by typing `hubot help`.
+`@charlie set tock <tock line>` or `@charlie set tock line <tock line>`  
+Charlie will associate the current channel to the given tock line
 
-    Hubot> hubot help
+`@charlie tock` or `@charlie tock line`  
+Charlie will tell you what tock line is associated with the current channel, if any
 
-    Hubot> animate me <query> - The same thing as `image me`, except adds a few
-    convert me <expression> to <units> - Convert expression to given units.
-    help - Displays all of the help commands that Hubot knows about.
-    ...
+`something awesome xpost #channel`  
+Charlie will attempt to copy your message to the specified channel.  If it can't,
+it'll let you know.
 
+`@charlie when is the next holiday?`
+Charlie will tell you when the next federal holiday is
 
-### Scripting
+`@charlie ping`
+Charlie will respond with `PONG` - useful for making sure Charlie's online
 
-Take a look at the scripts in the `./scripts` folder for examples.
-Delete any scripts you think are useless or boring.  Add whatever functionality you
-want hubot to have. Read up on what you can do with hubot in the [Scripting Guide](https://github.com/github/hubot/blob/master/docs/scripting.md).
+Plus lots more.  Try sending a DM to Charlie with `help` for a full list!
 
-### Redis Persistence
+## Running Charlie locally
 
-If you are going to use the `redis-brain.coffee` script from `hubot-scripts`
-(strongly suggested), you will need to add the Redis to Go addon on Heroku which requires a verified
-account or you can create an account at [Redis to Go][redistogo] and manually
-set the `REDISTOGO_URL` variable.
+The easiest way to test Charlie locally is using Docker.  First, create a `.env` file
+(see the `.env-sample` for reference) that sets, at minimum, the `HUBOT_SLACK_TOKEN`
+variable.  (See the configuration section on environment variables below for a list of
+all the variables you can set.)  Then, run `docker-compose up`.  This will get all of
+Charlie's dependencies installed, setup a redis container, hook up Charlie and redis,
+and start Charlie up.
 
-    % heroku config:set REDISTOGO_URL="..."
+If you don't want to use Docker, you can run `npm install` from the root directory,
+set your `HUBOT_SLACK_TOKEN` environment variable, and then run `sh start.sh`.  This
+is a minimum execution; to enable more features, you may need to set associated
+environment variables.
 
-If you don't require any persistence feel free to remove the
-`redis-brain.coffee` from `hubot-scripts.json` and you don't need to worry
-about redis at all.
+## Deploying
 
-[redistogo]: https://redistogo.com/
+18F's Hubot is named Charlie, and is deployed in [Cloud.gov](https://cloud.gov/).
 
-## Adapters
+Charlie is set up with continuous deployment, just merge your code to master and
+it will get deployed with Travis.
 
-Adapters are the interface to the service you want your hubot to run on. This
-can be something like Campfire or IRC. There are a number of third party
-adapters that the community have contributed. Check
-[Hubot Adapters][hubot-adapters] for the available ones.
+## Configuration
 
-If you would like to run a non-Campfire or shell adapter you will need to add
-the adapter package as a dependency to the `package.json` file in the
-`dependencies` section.
+### slack-github-issues
 
-Once you've added the dependency and run `npm install` to install it you can
-then run hubot with the adapter.
+We use [hubot-slack-github-issues](https://github.com/mbland/hubot-slack-github-issues) to automatically create Github issues
+when certain emoji reactions are added to messages in certain channels.  This is configured in
+[config/slack-github-issues.json](config/slack-github-issues.json).
 
-    % bin/hubot -a <adapter>
+The `<token>` strings in the top part of the config are replaced by environment variables (see below) if
+provided.  To add a new Github issue rule, add a new entry to the `rules` array.  The properties are
+as follows:
 
-Where `<adapter>` is the name of your adapter without the `hubot-` prefix.
+|name|purpose|
+|---|---|
+|reactionName|The name of the emoji in Slack that should trigger this issue, without the colons.  For example, if you want `:evergreen:` to trigger an issue, this value should be `evergreen`.|
+|githubRepository|The name (and only the name) of the repository where the issue should be filed. The repo owner is taken from the top level of the config, in the `githubUser` property.|
+|channelNames|A list of channel names where this reaction will trigger an issue.  This lets you limit responses to just certain channels.  If this is not included, then Charlie will respond to the reaction in every channel.
 
-[hubot-adapters]: https://github.com/github/hubot/blob/master/docs/adapters.md
+### Environment variables
 
-## hubot-scripts
+|name|purpose|
+|---|---|
+|HUBOT_SLACK_TOKEN|Required to connect to Slack.
+|HUBOT_GITHUB_TOKEN|Required for Github integrations.  For example, there's a script that will create a Github issue when certain emoji reactions are added to messages.  This token must be set for that to work.|
+|HUBOT_TWITTER_ACCESS_TOKEN_SECRET|Used by the twitter stream integration
+|HUBOT_TWITTER_STREAM_ACCESS_TOKEN|Used by the twitter stream integration
+|HUBOT_TWITTER_STREAM_CONSUMER_KEY|Used by the twitter stream integration
+|HUBOT_TWITTER_STREAM_CONSUMER_KEY|Used by the twitter stream integration
+|ADAPTER|This should either be omitted or set to `slack`
+|HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH|Path to the file that configures the script that creates Github issues when emoji reactions are added.  Defaults to `config/slack-github-issues.json`.  The default is accurate for Charlie, but if you needed to override it for testing, you certainly can.
+|HUBOT_LOG_LEVEL|Log level.  When using Docker, this is set to `debug`.
+|REDIS_URL|URL to redis, if desired.  The URL should be of the form `redis://:password@host:port` - note that there is not a username before the password in this URL, because redis does not support usernames.
 
-There will inevitably be functionality that everyone will want. Instead
-of adding it to hubot itself, you can submit pull requests to
-[hubot-scripts][hubot-scripts].
+## Documentation
 
-To enable scripts from the hubot-scripts package, add the script name with
-extension as a double quoted string to the `hubot-scripts.json` file in this
-repo.
+General information about Hubot can be found here:
 
-[hubot-scripts]: https://github.com/github/hubot-scripts
+https://hubot.github.com/
 
-## external-scripts
+## Contributing
 
-Tired of waiting for your script to be merged into `hubot-scripts`? Want to
-maintain the repository and package yourself? Then this added functionality
-maybe for you!
+Please read the [contribution guidelines](CONTRIBUTING.md) before submitting a
+pull request.
 
-Hubot is now able to load scripts from third-party `npm` packages! To enable
-this functionality you can follow the following steps.
+## Public domain
 
-1. Add the packages as dependencies into your `package.json`
-2. `npm install` to make sure those packages are installed
+This project is in the worldwide [public domain](LICENSE.md).  As stated in [CONTRIBUTING](CONTRIBUTING.md):
 
-To enable third-party scripts that you've added you will need to add the package
-name as a double quoted string to the `external-scripts.json` file in this repo.
-
-## Deployment
-
-    % heroku create --stack cedar
-    % git push heroku master
-    % heroku ps:scale app=1
-
-If your Heroku account has been verified you can run the following to enable
-and add the Redis to Go addon to your app.
-
-    % heroku addons:add redistogo:nano
-
-If you run into any problems, checkout Heroku's [docs][heroku-node-docs].
-
-You'll need to edit the `Procfile` to set the name of your hubot.
-
-More detailed documentation can be found on the
-[deploying hubot onto Heroku][deploy-heroku] wiki page.
-
-### Deploying to UNIX or Windows
-
-If you would like to deploy to either a UNIX operating system or Windows.
-Please check out the [deploying hubot onto UNIX][deploy-unix] and
-[deploying hubot onto Windows][deploy-windows] wiki pages.
-
-[heroku-node-docs]: http://devcenter.heroku.com/articles/node-js
-[deploy-heroku]: https://github.com/github/hubot/blob/master/docs/deploying/heroku.md
-[deploy-unix]: https://github.com/github/hubot/blob/master/docs/deploying/unix.md
-[deploy-windows]: https://github.com/github/hubot/blob/master/docs/deploying/unix.md
-
-## Campfire Variables
-
-If you are using the Campfire adapter you will need to set some environment
-variables. Refer to the documentation for other adapters and the configuraiton
-of those, links to the adapters can be found on [Hubot Adapters][hubot-adapters].
-
-Create a separate Campfire user for your bot and get their token from the web
-UI.
-
-    % heroku config:set HUBOT_CAMPFIRE_TOKEN="..."
-
-Get the numeric IDs of the rooms you want the bot to join, comma delimited. If
-you want the bot to connect to `https://mysubdomain.campfirenow.com/room/42` 
-and `https://mysubdomain.campfirenow.com/room/1024` then you'd add it like this:
-
-    % heroku config:set HUBOT_CAMPFIRE_ROOMS="42,1024"
-
-Add the subdomain hubot should connect to. If you web URL looks like
-`http://mysubdomain.campfirenow.com` then you'd add it like this:
-
-    % heroku config:set HUBOT_CAMPFIRE_ACCOUNT="mysubdomain"
-
-[hubot-adapters]: https://github.com/github/hubot/blob/master/docs/adapters.md
-
-## Restart the bot
-
-You may want to get comfortable with `heroku logs` and `heroku restart`
-if you're having issues.
+> This project is in the public domain within the United States, and copyright and related
+> rights in the work worldwide are waived through the
+> [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/).
+>
+> All contributions to this project will be released under the CC0 dedication. By submitting a pull
+> request, you are agreeing to comply with this waiver of copyright interest.
